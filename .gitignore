@@ -1,0 +1,3 @@
+/.vagrant/
+/application/*
+!application/.gitkeep
