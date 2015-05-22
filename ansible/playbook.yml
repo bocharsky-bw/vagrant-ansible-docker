@@ -6,6 +6,7 @@
     - name: install packages
       apt: name={{ item }} state=latest update_cache=yes
       with_items:
+        - git
         - wget
         - curl
 
@@ -24,6 +25,22 @@
     - name: install docker-py
       pip: name=docker-py version=1.1.0 # v1.1.0 is workaround from https://github.com/ansible/ansible/issues/10879#issuecomment-97738264
 
+    - name: check or build php-fpm image
+      docker_image:
+        path: /vagrant/docker/php-fpm
+        name: my.php-fpm
+        state: build
+
+    - name: php-fpm container
+      docker:
+        image: my.php-fpm
+        name: my.php-fpm.container
+        state: restarted
+        volumes:
+          - "/vagrant:/vagrant"
+        ports:
+          - "9000:9000"
+
     - name: check or build nginx image
       docker_image:
         path: /vagrant/docker/nginx
@@ -35,22 +52,10 @@
         image: my.nginx
         name: my.nginx.container
         state: restarted
+        volumes_from:
+          - "my.php-fpm.container"
+        links:
+          - "my.php-fpm.container"
         ports:
           - "80:80"
           - "443:443"
-
-    - name: check or build php-fpm image
-      docker_image:
-        path: /vagrant/docker/php-fpm
-        name: my.php-fpm
-        state: build
-
-    - name: php-fpm container
-      docker:
-        image: php:fpm
-        name: my.php-fpm.container
-        state: restarted
-        links:
-          - "my.nginx.container"
-        ports:
-          - "9000:9000"
